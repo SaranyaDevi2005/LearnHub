@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +9,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { CheckIcon, ChevronDown, ChevronRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Course {
   id: string;
@@ -48,10 +59,48 @@ interface Course {
 export default function CourseDetails() {
   const { id } = useParams();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
+  const [isEnrollSuccess, setIsEnrollSuccess] = useState(false);
   
   const { data: course, isLoading, error } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
   });
+
+  // In a real app, this would use the authenticated user's ID
+  const userId = 1;
+  
+  const enrollMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/enroll", {
+        userId,
+        courseId: parseInt(id || "0")
+      });
+    },
+    onSuccess: () => {
+      setIsEnrollSuccess(true);
+      toast({
+        title: "Enrollment Successful!",
+        description: "You have been successfully enrolled in this course.",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Enrollment Failed",
+        description: error.message || "There was an error enrolling in this course. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEnrollNow = () => {
+    setIsEnrollDialogOpen(true);
+  };
+  
+  const confirmEnrollment = () => {
+    enrollMutation.mutate();
+  };
 
   const handleStartAssessment = () => {
     navigate(`/assessment/${id}`);
@@ -130,6 +179,52 @@ export default function CourseDetails() {
 
   return (
     <div className="fade-in">
+      {/* Enrollment Confirmation Dialog */}
+      <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Enrollment</DialogTitle>
+            <DialogDescription>
+              You are about to enroll in <span className="font-medium">{course?.title}</span> for ${course?.price.toFixed(2)}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <h3 className="text-sm font-medium mb-2">By enrolling, you will get:</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li className="flex items-center">
+                <CheckIcon className="h-4 w-4 text-secondary mr-2" />
+                Full lifetime access to the course
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="h-4 w-4 text-secondary mr-2" />
+                Access to {course?.totalLectures} lectures across {course?.totalSections} sections
+              </li>
+              <li className="flex items-center">
+                <CheckIcon className="h-4 w-4 text-secondary mr-2" />
+                Certificate upon completion
+              </li>
+            </ul>
+          </div>
+          
+          <DialogFooter className="flex justify-between sm:justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEnrollDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmEnrollment}
+              disabled={enrollMutation.isPending}
+              className="ml-2"
+            >
+              {enrollMutation.isPending ? "Processing..." : "Confirm Enrollment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         {/* Course Header */}
         <div className="relative">
@@ -255,10 +350,18 @@ export default function CourseDetails() {
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-gray-50 rounded-lg p-6 shadow-sm sticky top-20">
                 <div className="text-3xl font-bold text-gray-900 mb-4">${course.price.toFixed(2)}</div>
-                <Button className="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded mb-3">
-                  Enroll Now
+                <Button 
+                  className="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded mb-3"
+                  onClick={handleEnrollNow}
+                  disabled={isEnrollSuccess || enrollMutation.isPending}
+                >
+                  {enrollMutation.isPending ? "Processing..." : 
+                   isEnrollSuccess ? "Enrolled" : "Enroll Now"}
                 </Button>
-                <Button variant="outline" className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded mb-6">
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded mb-6"
+                >
                   Add to Wishlist
                 </Button>
                 
