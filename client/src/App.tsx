@@ -15,7 +15,6 @@ import Assessment from "@/pages/Assessment";
 import AssessmentResults from "@/pages/AssessmentResults";
 import MyLearning from "@/pages/MyLearning";
 import Resources from "@/pages/Resources";
-import SavedCourses from "@/pages/SavedCourses";
 
 function Router() {
   return (
@@ -31,7 +30,6 @@ function Router() {
       <Route path="/assessment-results/:courseId" component={AssessmentResults} />
       <Route path="/my-learning" component={MyLearning} />
       <Route path="/resources" component={Resources} />
-      <Route path="/saved-courses" component={SavedCourses} />
       <Route component={NotFound} />
     </Switch>
   );

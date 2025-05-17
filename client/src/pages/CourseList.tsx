@@ -1,9 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Select,
   SelectContent,
@@ -40,72 +37,11 @@ interface CourseListProps {
 export default function CourseList({ featured = false }: CourseListProps) {
   const [sort, setSort] = useState("popular");
   const [currentPage, setCurrentPage] = useState(1);
-  const [savedCourseIds, setSavedCourseIds] = useState<string[]>([]);
   const coursesPerPage = 6;
-  const { toast } = useToast();
-  
-  // In a real app, this would come from auth context
-  const userId = 1;
 
-  const { data: courses = [], isLoading, error } = useQuery<Course[]>({
+  const { data: courses, isLoading, error } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
-  
-  // Query to get user's saved courses
-  const { data: savedCourses = [] } = useQuery<Course[]>({
-    queryKey: ["/api/saved-courses", userId],
-    queryFn: async () => {
-      try {
-        const data = await apiRequest<Course[]>(`/api/saved-courses/${userId}`);
-        return data;
-      } catch (err) {
-        console.error("Error fetching saved courses:", err);
-        return [];
-      }
-    },
-  });
-  
-  // Update savedCourseIds whenever savedCourses changes
-  useEffect(() => {
-    if (savedCourses && Array.isArray(savedCourses)) {
-      setSavedCourseIds(savedCourses.map(course => course.id.toString()));
-    }
-  }, [savedCourses]);
-  
-  // Mutation for saving a course
-  const saveMutation = useMutation({
-    mutationFn: async (courseId: string) => {
-      return await apiRequest({
-        url: '/api/save-course',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, courseId }),
-      });
-    },
-    onSuccess: () => {
-      // Invalidate the saved courses query to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['/api/saved-courses', userId] });
-      toast({
-        title: "Course Saved",
-        description: "This course has been added to your saved courses.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to save course. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const handleSaveCourse = (courseId: string) => {
-    saveMutation.mutate(courseId);
-    // Optimistically update UI
-    setSavedCourseIds((prev) => [...prev, courseId]);
-  };
 
   const handleSortChange = (value: string) => {
     setSort(value);
@@ -245,20 +181,6 @@ export default function CourseList({ featured = false }: CourseListProps) {
                   {course.category}
                 </span>
                 <div className="ml-auto flex items-center">
-                  <button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSaveCourse(course.id);
-                    }}
-                    className="mr-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                    title={savedCourseIds.includes(course.id) ? "Saved to your list" : "Save to your list"}
-                  >
-                    {savedCourseIds.includes(course.id) ? (
-                      <BookmarkCheck className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Bookmark className="h-4 w-4 text-gray-500 hover:text-primary" />
-                    )}
-                  </button>
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>

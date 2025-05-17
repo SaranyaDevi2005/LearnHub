@@ -6,9 +6,7 @@ import { storage } from "./storage";
 import {
   registerUser,
   getUserByUsername,
-  getUserById,
-  saveCourseForUser,
-  getSavedCoursesForUser
+  getUserById
 } from "./controllers/userController";
 import {
   getAllCourses,
@@ -35,10 +33,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Course routes
   app.get("/api/courses", getAllCourses);
   app.get("/api/courses/:id", getCourseById);
-  
-  // Saved courses routes
-  app.post("/api/save-course", saveCourseForUser);
-  app.get("/api/saved-courses/:userId", getSavedCoursesForUser);
   
   // Enrollment routes
   app.post("/api/enroll", enrollUserInCourse);
