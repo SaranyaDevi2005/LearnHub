@@ -63,6 +63,9 @@ export default function CourseDetails() {
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [isEnrollSuccess, setIsEnrollSuccess] = useState(false);
   
+  // Check if the user is logged in (in a real app, this would come from an auth context)
+  const isLoggedIn = localStorage.getItem('user') !== null;
+  
   const { data: course, isLoading, error } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
   });
