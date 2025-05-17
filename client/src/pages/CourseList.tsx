@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -56,24 +56,27 @@ export default function CourseList({ featured = false }: CourseListProps) {
     queryKey: ["/api/saved-courses", userId],
     queryFn: async () => {
       try {
-        const data = await apiRequest(`/api/saved-courses/${userId}`);
-        return data as Course[];
+        const data = await apiRequest<Course[]>(`/api/saved-courses/${userId}`);
+        return data;
       } catch (err) {
         console.error("Error fetching saved courses:", err);
         return [];
       }
     },
-    onSuccess: (data) => {
-      if (data && Array.isArray(data)) {
-        setSavedCourseIds(data.map(course => course.id.toString()));
-      }
-    },
   });
+  
+  // Update savedCourseIds whenever savedCourses changes
+  useEffect(() => {
+    if (savedCourses && Array.isArray(savedCourses)) {
+      setSavedCourseIds(savedCourses.map(course => course.id.toString()));
+    }
+  }, [savedCourses]);
   
   // Mutation for saving a course
   const saveMutation = useMutation({
     mutationFn: async (courseId: string) => {
-      return await apiRequest('/api/save-course', {
+      return await apiRequest({
+        url: '/api/save-course',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

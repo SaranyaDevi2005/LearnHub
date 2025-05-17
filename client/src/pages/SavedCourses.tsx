@@ -35,8 +35,8 @@ export default function SavedCourses() {
     queryKey: ['/api/saved-courses', userId],
     queryFn: async () => {
       try {
-        const data = await apiRequest(`/api/saved-courses/${userId}`);
-        return data as Course[];
+        const data = await apiRequest<Course[]>(`/api/saved-courses/${userId}`);
+        return data;
       } catch (err) {
         console.error("Error fetching saved courses:", err);
         return [];
