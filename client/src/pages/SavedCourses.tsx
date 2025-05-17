@@ -31,9 +31,17 @@ export default function SavedCourses() {
   // For now, we'll use a hardcoded user ID
   const userId = 1; 
 
-  const { data: savedCourses, isLoading, error } = useQuery({
+  const { data: savedCourses = [], isLoading, error } = useQuery<Course[]>({
     queryKey: ['/api/saved-courses', userId],
-    queryFn: () => apiRequest<Course[]>(`/api/saved-courses/${userId}`),
+    queryFn: async () => {
+      try {
+        const data = await apiRequest(`/api/saved-courses/${userId}`);
+        return data as Course[];
+      } catch (err) {
+        console.error("Error fetching saved courses:", err);
+        return [];
+      }
+    },
   });
 
   if (isLoading) {
