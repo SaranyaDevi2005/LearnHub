@@ -397,8 +397,14 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Initialize with in-memory storage for development
-// In production, this would use MongoDB
-export const storage = process.env.NODE_ENV === 'production' 
+// Use MongoDB storage by default, fallback to in-memory storage if connection fails
+let useMongoStorage = true;
+
+// This is set by connectDB function when it initializes
+export const setStorageType = (usesMongo: boolean) => {
+  useMongoStorage = usesMongo;
+};
+
+export const storage = useMongoStorage 
   ? new MongoDBStorage() 
   : new MemStorage();
