@@ -19,6 +19,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  saveCourseForUser(userId: number, courseId: number): Promise<User | undefined>;
+  getSavedCoursesForUser(userId: number): Promise<Course[]>;
   
   // Course operations
   getAllCourses(): Promise<Course[]>;
@@ -86,6 +88,7 @@ export class MongoDBStorage implements IStorage {
       const newUser = new UserModel({
         id,
         ...insertUser,
+        savedCourses: [],
         createdAt: new Date()
       });
 
@@ -94,6 +97,39 @@ export class MongoDBStorage implements IStorage {
     } catch (error) {
       console.error("Error creating user:", error);
       throw error;
+    }
+  }
+  
+  async saveCourseForUser(userId: number, courseId: number): Promise<User | undefined> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user) return undefined;
+      
+      // Check if course is already saved
+      if (!user.savedCourses.includes(courseId)) {
+        user.savedCourses.push(courseId);
+        await user.save();
+      }
+      
+      return user.toObject();
+    } catch (error) {
+      console.error("Error saving course for user:", error);
+      return undefined;
+    }
+  }
+  
+  async getSavedCoursesForUser(userId: number): Promise<Course[]> {
+    try {
+      const user = await UserModel.findOne({ id: userId });
+      if (!user || !user.savedCourses || user.savedCourses.length === 0) {
+        return [];
+      }
+      
+      const courses = await CourseModel.find({ id: { $in: user.savedCourses } });
+      return courses.map(course => course.toObject());
+    } catch (error) {
+      console.error("Error getting saved courses for user:", error);
+      return [];
     }
   }
 
@@ -297,10 +333,39 @@ export class MemStorage implements IStorage {
     const user = {
       ...insertUser,
       id,
+      savedCourses: [],
       createdAt: now
     };
     this.users.set(id, user);
     return user;
+  }
+  
+  async saveCourseForUser(userId: number, courseId: number): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    // Check if course is already saved
+    if (!user.savedCourses) {
+      user.savedCourses = [];
+    }
+    
+    if (!user.savedCourses.includes(courseId)) {
+      user.savedCourses.push(courseId);
+      this.users.set(userId, user);
+    }
+    
+    return user;
+  }
+  
+  async getSavedCoursesForUser(userId: number): Promise<Course[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.savedCourses || user.savedCourses.length === 0) {
+      return [];
+    }
+    
+    return Array.from(this.courses.values()).filter(
+      course => user.savedCourses.includes(course.id)
+    );
   }
 
   // Course operations
