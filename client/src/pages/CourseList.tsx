@@ -69,8 +69,6 @@ export default function CourseList({ featured = false }: CourseListProps) {
   // Apply sorting
   if (sort === "popular") {
     filteredCourses = [...filteredCourses].sort((a, b) => b.rating - a.rating);
-  } else if (sort === "newest") {
-    filteredCourses = [...filteredCourses].sort((a, b) => a.id.localeCompare(b.id));
   } else if (sort === "price-low") {
     filteredCourses = [...filteredCourses].sort((a, b) => a.price - b.price);
   } else if (sort === "price-high") {
@@ -162,7 +160,6 @@ export default function CourseList({ featured = false }: CourseListProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="newest">Newest</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
               </SelectContent>
