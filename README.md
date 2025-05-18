@@ -22,7 +22,7 @@
 - Express.js
 
 ### Database:
-- MongoDB (Local or MongoDB Atlas)
+- MongoDB (MongoDB Atlas)
 
 ### Other Tools:
 - `express.json()` and `cors` middleware
